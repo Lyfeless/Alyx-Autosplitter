@@ -1,0 +1,9 @@
+state("hlvr")
+{
+    int loading : "vrclient_x64.dll", 0x34F50C;
+}
+
+isLoading
+{
+    return (current.loading != 0);
+}
