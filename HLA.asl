@@ -2,8 +2,8 @@ state("hlvr")
 {
     float startPos : "client.dll", 0xEA2D88;
     
-    string256 map : "engine2.dll" , 0x5418D0;
-    int loading : "client.dll" , 0xEF12F0; //int loading : "vrclient_x64.dll", 0x34F50C;
+    string256 map : "engine2.dll" , 0x5418B0; //"engine2.dll" , 0x5418D0;
+    int loading : "client.dll" , 0xEF21A0; //"client.dll" , 0xEF12F0;
 }
 
 startup
