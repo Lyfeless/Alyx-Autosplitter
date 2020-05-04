@@ -6,6 +6,16 @@ state("hlvr")
     int loading : "client.dll" , 0xEF21A0; //"client.dll" , 0xEF12F0;
 }
 
+init
+{
+    vars.waitForLoading = true;
+}
+
+exit
+{
+    timer.IsGameTimePaused = true;
+}
+
 startup
 {
     settings.Add("chapters", false, "Split on Chapters");
@@ -50,10 +60,18 @@ startup
         
         {"startup"                      , new Tuple<int, int>(-10       , -10       )}
     };
+    
+    vars.waitForLoading = false;
 }
 
 update
 {
+    if(vars.waitForLoading && curret.loading == 1)
+    {
+        timer.IsGameTimePaused = false;
+        vars.waitForLoading = false;
+    }    
+
     if(old.loading == 0 && current.loading == 1)
     {
         vars.tempMap = old.map;
