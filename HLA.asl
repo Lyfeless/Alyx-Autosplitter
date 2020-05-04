@@ -66,7 +66,7 @@ startup
 
 update
 {
-    if(vars.waitForLoading && curret.loading == 1)
+    if(vars.waitForLoading && current.loading == 1)
     {
         timer.IsGameTimePaused = false;
         vars.waitForLoading = false;
