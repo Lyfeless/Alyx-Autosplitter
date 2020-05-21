@@ -1,9 +1,9 @@
 state("hlvr")
 {
-    float startPos : "client.dll" , 0xE9DC68;
+    float startPos : "client.dll" , 0xE8E14C;
     
     string256 map : "engine2.dll" , 0x543AE0;
-    int loading : "client.dll" , 0xF57CE0;
+    int loading : "client.dll" , 0xF59000;
 }
 
 init
