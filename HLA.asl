@@ -15,6 +15,8 @@ state("hlvr") { }
 
 startup
 {
+    vars.logFileName = "ALYX.log";
+
     vars.watchers = new MemoryWatcherList();
     
     //Signatures
@@ -75,6 +77,12 @@ startup
 
 init
 {
+    vars.Log = (Action<string>)( myString => {
+        vars.logwriter = File.AppendText(vars.logFileName);
+        vars.logwriter.WriteLine(myString); 
+        vars.logwriter.Close();
+    });
+    
     vars.waitForLoading = true;
     
     ProcessModuleWow64Safe clientModule = modules.SingleOrDefault(m => m.FileName.Contains("win64\\client.dll"));
@@ -131,11 +139,6 @@ update
     {
         timer.IsGameTimePaused = false;
         vars.waitForLoading = false;
-    }    
-
-    if(vars.loading.Old == 0 && vars.loading.Current == 1)
-    {
-        vars.tempMap = vars.map.Old;
     }
     
     if(vars.map.Current == "a1_intro_world")
@@ -182,6 +185,7 @@ reset
 
 split
 {
+    /*
     if(vars.loading.Old == 1 && vars.loading.Current == 0)
     {
         if(vars.maps[vars.map.Current].Item1 == vars.maps[vars.tempMap].Item1 + 1)
@@ -193,6 +197,23 @@ split
                 if(settings["chapters"])
                     return vars.maps[vars.map.Current].Item2 == vars.maps[vars.tempMap].Item2 + 1;
             
+                return true;
+            }
+        }
+    }
+    */
+    
+    if(vars.map.Current != vars.map.Old && vars.map.Current != "a1_intro_world")
+    {
+        if(vars.maps[vars.map.Current].Item1 == vars.maps[vars.map.Old].Item1 + 1)
+        {
+            if(vars.map.Old == vars.latestMap)
+            {
+                vars.latestMap = vars.map.Current;
+                
+                if(settings["chapters"])
+                    return vars.maps[vars.map.Current].Item2 == vars.maps[vars.map.Old].Item2 + 1;
+                
                 return true;
             }
         }
