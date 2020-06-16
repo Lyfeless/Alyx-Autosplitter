@@ -21,9 +21,6 @@ startup
     settings.Add("chapters", false, "Split on Chapters");
 	settings.SetToolTip("chapters", "Split on Chapter Transitions Instead of Per-Map");
     
-    vars.tempMap = "";
-    vars.latestMap = "";
-    
     vars.maps = new Dictionary<string, Tuple<int, int>>() { 
     //   MAP NAME                                             ID          CHAPTER
         {"a1_intro_world"               , new Tuple<int, int>(0         , 0         )},
@@ -70,15 +67,7 @@ update
     {
         timer.IsGameTimePaused = false;
         vars.waitForLoading = false;
-    }    
-
-    if(old.loading == 0 && current.loading == 1)
-    {
-        vars.tempMap = old.map;
     }
-    
-    if(current.map == "a1_intro_world")
-        vars.latestMap = "a1_intro_world";
 }
 
 start
@@ -100,22 +89,13 @@ reset
 }
 
 split
-{
-    if(old.loading == 1 && current.loading == 0)
-    {
-        if(vars.maps[current.map].Item1 == vars.maps[vars.tempMap].Item1 + 1)
-        {
-            if(vars.tempMap == vars.latestMap)
-            {
-                vars.latestMap = current.map;
-                
-                if(settings["chapters"])
-                    return vars.maps[current.map].Item2 == vars.maps[vars.tempMap].Item2 + 1;
-            
-                return true;
-            }
-        }
-    }
+{	
+	if(vars.maps[current.map].Item1 == vars.maps[old.map].Item1 + 1)
+	{
+		if(settings["chapters"])
+			return vars.maps[current.map].Item2 == vars.maps[old.map].Item2 + 1;
+		return true;
+	}
     
     return (current.map == "a5_ending" && current.startPos > -1000.0f && old.startPos < -2000.0f);
 }
