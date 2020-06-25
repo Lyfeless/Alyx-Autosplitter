@@ -5,20 +5,19 @@ state("hlvr")
     int loading : "client.dll" , 0xF67F7C;
 }
 
-init
-{
-    vars.waitForLoading = true;
-}
-
-exit
-{
-    timer.IsGameTimePaused = true;
-}
-
 startup
 {
-    settings.Add("chapters", false, "Split on Chapters");
-	settings.SetToolTip("chapters", "Split on Chapter Transitions Instead of Per-Map");
+	vars.logFileName = "ALYX.log";
+	vars.maxFileSize = 4000000;
+	
+	vars.ChaptersSettingName = "Split on chapters";
+	vars.LoggingSettingName = "Debug Logging";
+	
+    settings.Add(vars.ChaptersSettingName, false, "Split on Chapters");
+	settings.SetToolTip(vars.ChaptersSettingName, "Split on Chapter Transitions Instead of Per-Map");
+	settings.Add(vars.LoggingSettingName, true);
+	settings.SetToolTip(vars.LoggingSettingName, "Log files help solve auto-splitting issues");
+	
     
     vars.maps = new Dictionary<string, Tuple<int, int>>() { 
     //   MAP NAME                                             ID          CHAPTER
@@ -60,6 +59,66 @@ startup
     vars.waitForLoading = false;
 }
 
+init
+{
+    vars.waitForLoading = true;
+	
+	vars.timerSecondOLD = -1;
+	vars.timerSecond = 0;
+	vars.timerMinuteOLD = -1;
+	vars.timerMinute = 0;
+	
+	// If the logging setting is checked, this function logs game info to a log file.
+	// If the file reaches max size, it will delete the oldest entries.
+	vars.Log = (Action<string>)( myString => {
+		
+		if(settings[vars.LoggingSettingName]){
+			
+			vars.logwriter = File.AppendText(vars.logFileName);
+			
+			print(myString);
+			vars.logwriter.WriteLine(myString); 
+			
+			vars.logwriter.Close();
+			
+			if((new FileInfo(vars.logFileName)).Length > vars.maxFileSize){
+				string[] lines = File.ReadAllLines(vars.logFileName);
+				File.WriteAllLines(vars.logFileName, lines.Skip(lines.Length/8).ToArray());
+			}
+		}
+		else{
+			if(File.Exists(vars.logFileName)){
+				File.Delete(vars.logFileName);
+			}
+		}
+	});
+	
+	// If a second/minute has passed, log important values.
+	vars.PeriodicLogging = (Action)( () => {
+		vars.timerMinute = timer.CurrentTime.RealTime.Value.Minutes;
+	
+		if(vars.timerMinute != vars.timerMinuteOLD){
+			vars.timerMinuteOLD = vars.timerMinute;
+			
+			vars.Log("TimeOfDay: " + DateTime.Now.ToString() + "\n" +
+			"settings[vars.ChaptersSettingName]: " + settings[vars.ChaptersSettingName].ToString() + "\n");
+		}
+		
+		vars.timerSecond = timer.CurrentTime.RealTime.Value.Seconds;
+	
+		if(vars.timerSecond != vars.timerSecondOLD){
+			vars.timerSecondOLD = vars.timerSecond;
+			
+			vars.Log("RealTime: "+timer.CurrentTime.RealTime.Value.ToString(@"hh\:mm\:ss") + "\n" +
+			"GameTime: "+timer.CurrentTime.GameTime.Value.ToString(@"hh\:mm\:ss") + "\n" +
+			"CurrentSplitIndex: "+timer.CurrentSplitIndex.ToString() + "\n" +
+			"loading: " + current.loading.ToString() + "\n" +
+			"map: " + current.map.ToString() + "\n" +
+			"startPos: " + current.startPos.ToString() + "\n");
+		}
+	});
+}
+
 update
 {
     if(vars.waitForLoading && current.loading == 1)
@@ -89,9 +148,11 @@ reset
 
 split
 {	
+	vars.PeriodicLogging();
+
 	if(vars.maps[current.map].Item1 == vars.maps[old.map].Item1 + 1)
 	{
-		if(settings["chapters"])
+		if(settings[vars.ChaptersSettingName])
 			return vars.maps[current.map].Item2 == vars.maps[old.map].Item2 + 1;
 		return true;
 	}
