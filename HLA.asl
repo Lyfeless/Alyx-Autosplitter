@@ -132,9 +132,9 @@ start
 {
     if(current.map == "a1_intro_world")
         if(old.loading == 1 && current.loading == 0)
-            return (current.startPos > 200.0f);
+            return (current.startPos > 150.0f);
         else
-            return (current.startPos > 200.0f && old.startPos < -1000.0f);
+            return (current.startPos > 150.0f && old.startPos < -1000.0f);
 }
 
 reset
