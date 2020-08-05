@@ -1,23 +1,43 @@
 state("hlvr")
 {
-    float startPos : "client.dll" , 0xE9A030;
     string256 map : "engine2.dll" , 0x544B00;
     int loading : "client.dll" , 0xF67F7C;
+    
+    //float mapTime : "server.dll" , 0x125f8e0, 0x0; 2838: this one is written by the game engine, doesn't respond to client-sided lag very much
+	float mapTime : "client.dll" , 0xf67f94; 
+    
+	// 2838: moveFlag is the boolean that controls if the player can move or not
+	int moveFlag : "server.dll" , 0x150E1D0, 0x78, 0x2e9c;
+    
+    // 2838: autoGrip is the boolean an entity at the end uses to control alyx's hand, specifically the one that controls its pose when you 
+	// grab onto the cables. This boolean makes your hands stuck and is changed from 1 to 0 when the game ends.
+	// an awesome quadruple offset pointer
+	byte autoGrip : "server.dll", 0x143C630, 0x28, 0x28, 0xB4;
+}
+
+init
+{
+    vars.waitForLoading = true;
+}
+
+exit
+{
+    timer.IsGameTimePaused = true;
 }
 
 startup
 {
-	vars.logFileName = "ALYX.log";
-	vars.maxFileSize = 4000000;
+    //SETTINGS
+    settings.Add("chapters", false, "Split on Chapters");
+	settings.SetToolTip("chapters", "Split on Chapter Transitions Instead of Per-Map");
+    
+    settings.Add("il", false, "IL Mode");
+	settings.SetToolTip("il", "Only use when running ILs. Starts automatically on any map selected");
+    
+    //MAP DATA
+    vars.latestMap = "a1_intro_world";
 	
-	vars.ChaptersSettingName = "Split on chapters";
-	vars.LoggingSettingName = "Debug Logging";
-	
-    settings.Add(vars.ChaptersSettingName, false, "Split on Chapters");
-	settings.SetToolTip(vars.ChaptersSettingName, "Split on Chapter Transitions Instead of Per-Map");
-	settings.Add(vars.LoggingSettingName, true);
-	settings.SetToolTip(vars.LoggingSettingName, "Log files help solve auto-splitting issues");
-	
+	vars.rate = 0.0f;
     
     vars.maps = new Dictionary<string, Tuple<int, int>>() { 
     //   MAP NAME                                             ID          CHAPTER
@@ -57,110 +77,93 @@ startup
     };
     
     vars.waitForLoading = false;
-}
-
-init
-{
-    vars.waitForLoading = true;
-	
-	vars.timerSecondOLD = -1;
-	vars.timerSecond = 0;
-	vars.timerMinuteOLD = -1;
-	vars.timerMinute = 0;
-	
-	// If the logging setting is checked, this function logs game info to a log file.
-	// If the file reaches max size, it will delete the oldest entries.
-	vars.Log = (Action<string>)( myString => {
-		
-		if(settings[vars.LoggingSettingName]){
-			
-			vars.logwriter = File.AppendText(vars.logFileName);
-			
-			print(myString);
-			vars.logwriter.WriteLine(myString); 
-			
-			vars.logwriter.Close();
-			
-			if((new FileInfo(vars.logFileName)).Length > vars.maxFileSize){
-				string[] lines = File.ReadAllLines(vars.logFileName);
-				File.WriteAllLines(vars.logFileName, lines.Skip(lines.Length/8).ToArray());
-			}
-		}
-		else{
-			if(File.Exists(vars.logFileName)){
-				File.Delete(vars.logFileName);
-			}
-		}
-	});
-	
-	// If a second/minute has passed, log important values.
-	vars.PeriodicLogging = (Action)( () => {
-		vars.timerMinute = timer.CurrentTime.RealTime.Value.Minutes;
-	
-		if(vars.timerMinute != vars.timerMinuteOLD){
-			vars.timerMinuteOLD = vars.timerMinute;
-			
-			vars.Log("TimeOfDay: " + DateTime.Now.ToString() + "\n" +
-			"settings[vars.ChaptersSettingName]: " + settings[vars.ChaptersSettingName].ToString() + "\n");
-		}
-		
-		vars.timerSecond = timer.CurrentTime.RealTime.Value.Seconds;
-	
-		if(vars.timerSecond != vars.timerSecondOLD){
-			vars.timerSecondOLD = vars.timerSecond;
-			
-			vars.Log("RealTime: "+timer.CurrentTime.RealTime.Value.ToString(@"hh\:mm\:ss") + "\n" +
-			"GameTime: "+timer.CurrentTime.GameTime.Value.ToString(@"hh\:mm\:ss") + "\n" +
-			"CurrentSplitIndex: "+timer.CurrentSplitIndex.ToString() + "\n" +
-			"loading: " + current.loading.ToString() + "\n" +
-			"map: " + current.map.ToString() + "\n" +
-			"startPos: " + current.startPos.ToString() + "\n");
-		}
-	});
+    
+    //TIMER
+    vars.currentTime = 0.0f;
 }
 
 update
 {
-    if(vars.waitForLoading && current.loading == 1)
+    //fix for weird timing during game crash, might not be needed anymore
+    if(vars.waitForLoading && current.loading >= 1)
     {
         timer.IsGameTimePaused = false;
         vars.waitForLoading = false;
     }
+    
+    //Set Current Time
+	
+	// 2838: 
+	// the game has 2 states of loading: waiting for map load (state 1) and waiting for the player to press the trigger (state 2)
+	// we'll only need to exclude state 1 as state 2 is when the game has finished loading in
+	
+	float delta = current.mapTime - old.mapTime;
+	
+	if (delta > 0.0f && current.loading != 1)
+	{
+		vars.currentTime += delta;
+		vars.rate = current.mapTime - old.mapTime;
+	}
 }
 
 start
-{
-    if(current.map == "a1_intro_world")
-        if(old.loading == 1 && current.loading == 0)
-            return (current.startPos > 150.0f);
-        else
-            return (current.startPos > 150.0f && old.startPos < -1000.0f);
+{   
+	vars.currentTime = 0.0f;
+    //Normal Start Condition
+    if(current.map == "a1_intro_world") {
+        if (current.moveFlag == 0 && old.moveFlag == 1) 
+		{
+            vars.latestMap = "a1_intro_world";
+            return true;
+        }
+        return false;
+    }
+    else if(settings["il"])
+    {
+        //IL Starts on any level
+        bool ilstart = (old.loading == 1 && current.loading == 0);
+        if (ilstart) { //latestmap has to be set or end split won't work
+            vars.latestMap = current.map;
+        }
+        return ilstart;
+    }
 }
 
 reset
 {
-    if(current.map == "a1_intro_world")
-        if(old.loading == 1 && current.loading == 0)
-            return (current.startPos > 200.0f);
-        else
-            return (current.startPos > 200.0f && old.startPos < -1000.0f);
+    if(!settings["il"])
+    {
+        if(current.map == "a1_intro_world") {
+            if (current.moveFlag == 0 && old.moveFlag == 1) {
+                vars.latestMap = "a1_intro_world";
+                vars.currentTime = 0.0f;
+                return true;
+            }
+            return false;
+        } 
+    }
 }
 
 split
-{	
-	vars.PeriodicLogging();
-
-	if(vars.maps[current.map].Item1 == vars.maps[old.map].Item1 + 1)
+{
+    //Only split if map is increasing
+    if(vars.maps[current.map].Item1 == vars.maps[vars.latestMap].Item1 + 1)
+    {
+        vars.latestMap = current.map;
+        
+        if(settings["chapters"])
+            return (vars.maps[current.map].Item2 == vars.maps[vars.latestMap.old].Item2 + 1);
+		
+        return true;
+    }
+    
+    //Ending Conditional
+	if (current.map == "a5_ending" && current.autoGrip == 0 && old.autoGrip == 1)
 	{
-		if(settings[vars.ChaptersSettingName])
-			return vars.maps[current.map].Item2 == vars.maps[old.map].Item2 + 1;
 		return true;
 	}
-    
-    return (current.map == "a5_ending" && current.startPos > -1000.0f && old.startPos < -2000.0f);
 }
 
-isLoading
-{
-    return (current.loading != 0);
-}
+isLoading { return true; }
+
+gameTime { return TimeSpan.FromSeconds(vars.currentTime); }
