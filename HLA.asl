@@ -149,10 +149,11 @@ split
     //Only split if map is increasing
     if(vars.maps[current.map].Item1 == vars.maps[vars.latestMap].Item1 + 1)
     {
+    	string oldMap = vars.latestMap;
         vars.latestMap = current.map;
         
         if(settings["chapters"])
-            return (vars.maps[current.map].Item2 == vars.maps[vars.latestMap.old].Item2 + 1);
+            return (vars.maps[current.map].Item2 == vars.maps[oldMap].Item2 + 1);
 		
         return true;
     }
