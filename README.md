@@ -13,7 +13,7 @@
 * 1.2
 * 1.1
 
-## Contributers:
+## Contributors:
 **Lyfeless**
 >Initial code work, map organization and splitting code
 
