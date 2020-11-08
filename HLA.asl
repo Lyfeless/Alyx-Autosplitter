@@ -1,18 +1,26 @@
+// HLVR AUTO SPLITTER 
+// CREDITS: 
+	// Lyfeless and DerkO for starting the project, initial load removal and splitting code
+	// 2838 for Auto-Start, Auto-End, entity list and sigscanning shenanigans
+// IF THIS SPLITTER BREAKS FOR YOU PLEASE DO MENTION IN #source2-general IN THE SOURCERUNS DISCORD (it's probably 2838's fault)
+
 state("hlvr") { }
 
 init
 {
-    Func<IntPtr, int, int, IntPtr> GetPointerFromOpcode = (ptr, trgoperandoffset, totalsize) =>
+	// hla accesses static data not by using absolute pointers but using an offset off to the very next instruction instead
+	// so we'll have to specify the size of the instruction
+    Func<IntPtr, int, int, IntPtr> GetPointerFromOpcode = (ptr, trgOperandOffset, totalSize) =>
 	{
-		byte[] bytes = memory.ReadBytes(ptr + trgoperandoffset, 4);
+		byte[] bytes = memory.ReadBytes(ptr + trgOperandOffset, 4);
 		if (bytes == null)
 		{
 			return IntPtr.Zero; 
 		}
 		Array.Reverse(bytes);
 		int offset = Convert.ToInt32(BitConverter.ToString(bytes).Replace("-",""),16);
-		IntPtr actualptr = IntPtr.Add((ptr + totalsize), offset);
-		return actualptr;
+		IntPtr actualPtr = IntPtr.Add((ptr + totalSize), offset);
+		return actualPtr;
 	};
 	
 
@@ -44,7 +52,7 @@ init
 	ProcessModuleWow64Safe client = modules.FirstOrDefault(x => x.ModuleName.ToLower() == "client.dll");
 	ProcessModuleWow64Safe server = modules.FirstOrDefault(x => x.ModuleName.ToLower() == "server.dll");
 	ProcessModuleWow64Safe engine = modules.FirstOrDefault(x => x.ModuleName.ToLower() == "engine2.dll");
-	if(client == null || engine == null || server == null)
+	if (client == null || engine == null || server == null)
 	{
 		Thread.Sleep(1000);
 		print("[SIGSCANNING] All modules aren't yet loaded! Waiting 1 second until next try");
@@ -55,6 +63,7 @@ init
 	var serverScanner = new SignatureScanner(game, server.BaseAddress, server.ModuleMemorySize);
 	
 	IntPtr ptrnoVr			= GetPointerFromOpcode(clientScanner.Scan(vars.signoVr), 3, 7);
+	// this pointer doesn't seem to be initialized whenever the game is in novr
 	bool isnoVr = new DeepPointer(ptrnoVr).Deref<IntPtr>(game) == IntPtr.Zero;
 	
 	IntPtr ptrentList 		= GetPointerFromOpcode(serverScanner.Scan(vars.sigentList), 3, 7);
@@ -71,25 +80,23 @@ init
 	print("[SIGSCANNING] mapTime PTR is " + ptrmapTime.ToString("X"));
 	print("[SIGSCANNING] mapName PTR is " + ptrmapName.ToString("X"));
 	print("[SIGSCANNING] noVr PTR is " + ptrnoVr.ToString("X"));
-
-	int buildnum = memory.ReadValue<int>(ptrbuildNum);
-	print("Game is build number " + buildnum);	
 	
 	profiler.Stop();
 	print("[SIGSCANNING] Signature scanning done in " + profiler.ElapsedMilliseconds * 0.001f + " seconds");
 	
+	int buildnum = memory.ReadValue<int>(ptrbuildNum);
+	print("[GAME INFO] Game is build number " + buildnum);	
+
+	if (isnoVr)
+	{
+		print("[GAME INFO] Game is running in No VR mode");
+	}
 	
 	// SETTING UP WATCHLIST
 	vars.loading 		= new MemoryWatcher<int>(ptrloading);
 	vars.mapTime 		= (isnoVr) ? new MemoryWatcher<float>(new DeepPointer(ptrmapTime, 0x0)) : new MemoryWatcher<float>(ptrmapTime);
 	vars.inLvlTrans 	= new MemoryWatcher<byte>(ptrinLvlTrans);
 	vars.entList		= new MemoryWatcher<IntPtr>(new DeepPointer(ptrentList));
-
-	if (isnoVr)
-	{
-		print("Game is running in No VR mode");
-	}
-	
 	vars.moveFlag 		= new MemoryWatcher<byte>(new DeepPointer(ptrentList, 0x18, 0x78, 0x2e9c));
 	vars.map			= new StringWatcher(ptrmapName, 120);
 	
@@ -104,12 +111,15 @@ init
 	
 	// ENTITY LIST FUNCTIONS
 	
-	int entinfosize = 120;
+	int entInfoSize = 120;
 	
 	Func<int, IntPtr> GetEntPtrFromIndex = (index) =>
 	{
+		// the game splits the entity pointer list into blocks with seemingly a certain size
+		// this function is taken from the game's decompiled code
+
 		int block = 24 + (index >> 9) * 8;
-		int pos = (index & 511) * entinfosize;
+		int pos = (index & 511) * entInfoSize;
 		
 		DeepPointer DPentPtr = new DeepPointer(vars.entList.Current + block, 0x0);
 		IntPtr blockPtr = IntPtr.Zero;
@@ -127,16 +137,20 @@ init
 		return name;
 	};
 	
-	// 2838: expensive, do NOT call frequently!!!!
+	// 2838: EXTREMELY expensive, do NOT call frequently!!!!
 	Func<string, bool, IntPtr> GetEntFromName = (name, isTargetName) =>
 	{
-		for (int i = 0; i < 2000; i++)
+		var prof = Stopwatch.StartNew();
+		// 2838: theorectically the index can go all the way up to 32768 but it never does even on the biggest of maps
+		for (int i = 0; i <= 20000; i++)
 		{
 			IntPtr entPtr = GetEntPtrFromIndex(i);
 			if (entPtr != IntPtr.Zero)
 			{
 				if (GetNameFromPtr(entPtr, isTargetName) == name)
 				{
+					prof.Stop();
+					print("[ENTFINDING] Successfully found " + name + "'s pointer after " + prof.ElapsedMilliseconds * 0.001f + " seconds, index #" + i);
 					return entPtr;
 				}
 				else
@@ -144,7 +158,10 @@ init
 					continue;
 				}
 			}
+			prof.Stop();
+			print("ENTFINDING] Can't find " + name + "'s pointer! Time spent: " + prof.ElapsedMilliseconds * 0.001f + " seconds");
 		}
+		
 		return IntPtr.Zero;
 	};
 	
@@ -224,8 +241,9 @@ startup
     vars.currentTime = 0.0f;
 	
 	//END STUFF 
-	vars.autoGripOld = 0;
-	vars.autoGripDP = new DeepPointer((IntPtr)0x0);
+	vars.autoGripDP1 = new MemoryWatcher<byte>(IntPtr.Zero);
+	vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
+	vars.endCheck = true;
 }
 
 update
@@ -235,16 +253,20 @@ update
 	// 2838: Code for ending the run, messy but it works well enough
 	if (vars.map.Current == "a5_ending")
 	{
-		IntPtr tmp; vars.autoGripDP.DerefOffsets(game, out tmp);
-		
-		// first check: only search for the entity when game has just finished loading
-		// second check: if the player started livesplit and is in the final map already
-		if ((vars.loading.Current != 1 && vars.loading.Old == 1) || (tmp == IntPtr.Zero && vars.loading.Current != 1))
+		// first check: if the player started livesplit and is in the final map already
+		// second check: only search for the entity when game has just finished loading
+
+		if (vars.endCheck || (vars.loading.Current != 1 && vars.loading.Old == 1))
 		{
-			IntPtr endentPtr = vars.GetEntFromName("g_release_hand1", true);
-			vars.autoGripDP = new DeepPointer(endentPtr, 0x878, 0xb4);
+			vars.endCheck = false;
+			// do both hands to really make sure we don't miss
+			vars.autoGripDP1 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand1", true), 0x878, 0xb4));
+			vars.autoGripDP2 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand2", true), 0x878, 0xb4));
 		}
 	}
+	
+	vars.autoGripDP1.Update(game);
+	vars.autoGripDP2.Update(game);
 	
     //Set Current Time
 	
@@ -264,7 +286,8 @@ update
 start
 {   
 	vars.currentTime = 0.0f;
-	vars.autoGripOld = 0;
+	vars.autoGripDP1 = new MemoryWatcher<byte>(IntPtr.Zero);
+	vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
 	
     //Normal Start Condition
 
@@ -319,9 +342,8 @@ split
     //Ending Conditional
 	if (vars.map.Current == "a5_ending")
 	{
-        byte tmp; vars.autoGripDP.Deref<byte>(game, out tmp);
-        bool check = ( tmp == 0 && vars.autoGripOld == 1);
-        vars.autoGripOld = tmp;
+        bool check = ( (vars.autoGripDP1.Current == 0 && vars.autoGripDP1.Old == 1) || 
+		(vars.autoGripDP2.Current == 0 && vars.autoGripDP2.Old == 1));
         return check;
 	}
 }
