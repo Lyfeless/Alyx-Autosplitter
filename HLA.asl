@@ -1,4 +1,5 @@
 // HLVR AUTO SPLITTER 
+// VERSION 2.0 -- NOV 08 2020
 // CREDITS: 
 	// Lyfeless and DerkO for starting the project, initial load removal and splitting code
 	// 2838 for Auto-Start, Auto-End, entity list and sigscanning shenanigans
