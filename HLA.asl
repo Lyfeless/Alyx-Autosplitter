@@ -1,5 +1,5 @@
 // HLVR AUTO SPLITTER 
-// VERSION 2.0 -- NOV 08 2020
+// VERSION 2.3 -- MAR 20 2021
 // CREDITS: 
 	// Lyfeless and DerkO for starting the project, initial load removal and splitting code
 	// 2838 for Auto-Start, Auto-End, entity list and sigscanning shenanigans
@@ -23,8 +23,16 @@ init
 		IntPtr actualPtr = IntPtr.Add((ptr + totalSize), offset);
 		return actualPtr;
 	};
-	
 
+	Action<IntPtr, string> ReportPointer = (ptr, name) => 
+	{
+		if (ptr == IntPtr.Zero)
+			vars.print("[SIGSCANNING] " + name + " ptr was NOT found!!");
+		else
+			vars.print("[SIGSCANNING] " + name + " ptr was found at " + ptr.ToString("X"));
+	};
+	
+#region SIGNATURE SCANNING
 	vars.sigentList 	=	new SigScanTarget(6, 	"40 ?? 48 ?? ?? ??", 
 													"48 ?? ?? ?? ?? ?? ??", // MOV RAX,qword ptr [DAT_1814e3bc0]
 													"8b ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ff ?? ?? ?? ?? ?? 4c ?? ??");
@@ -46,6 +54,8 @@ init
 													"48 8B 5C 24 ??");
 	vars.signoVr		=	new SigScanTarget(0,	"48 8B 0D ?? ?? ?? ??", // MOV RCX,qword ptr [0x180e5e928]
 													"48 8B DA 48 85 C9 0F 84 ?? ?? ?? ?? 48 8B 01");
+	vars.sigSignOnState	=	new SigScanTarget(0,	"48 8B 05 ?? ?? ?? ??", // MOV RAX,qword ptr [signOnState base]
+													"48 8B D9 48 8D 0D ?? ?? ?? ?? FF 90 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00");
 
 	var profiler = Stopwatch.StartNew();
 	
@@ -56,7 +66,7 @@ init
 	if (client == null || engine == null || server == null)
 	{
 		Thread.Sleep(1000);
-		print("[SIGSCANNING] All modules aren't yet loaded! Waiting 1 second until next try");
+		vars.print("[SIGSCANNING] All modules aren't yet loaded! Waiting 1 second until next try");
         throw new Exception();
 	}
 	var clientScanner = new SignatureScanner(game, client.BaseAddress, client.ModuleMemorySize);
@@ -73,33 +83,36 @@ init
 	IntPtr ptrbuildNum		= GetPointerFromOpcode(engineScanner.Scan(vars.sigbuildNum), 2, 6);
 	IntPtr ptrmapTime 		= (isnoVr) ? GetPointerFromOpcode(serverScanner.Scan(vars.sigmapTimenoVr), 3, 7) : GetPointerFromOpcode(clientScanner.Scan(vars.sigmapTime), 4, 8);
 	IntPtr ptrmapName 		= GetPointerFromOpcode(engineScanner.Scan(vars.sigmapName), 3, 7) + 0x100;
+	IntPtr ptrSignOnState	= GetPointerFromOpcode(engineScanner.Scan(vars.sigSignOnState), 3, 7) + 0x218;
 	
-	print("[SIGSCANNING] entList PTR is " + ptrentList.ToString("X"));
-	print("[SIGSCANNING] inLvlTrans PTR is " + ptrinLvlTrans.ToString("X"));
-	print("[SIGSCANNING] buildNum PTR is " + ptrbuildNum.ToString("X"));
-	print("[SIGSCANNING] loading PTR is " + ptrloading.ToString("X"));
-	print("[SIGSCANNING] mapTime PTR is " + ptrmapTime.ToString("X"));
-	print("[SIGSCANNING] mapName PTR is " + ptrmapName.ToString("X"));
-	print("[SIGSCANNING] noVr PTR is " + ptrnoVr.ToString("X"));
+	ReportPointer(ptrentList, "entList");
+	ReportPointer(ptrinLvlTrans, "inLvlTrans");
+	ReportPointer(ptrbuildNum, "buildNum");
+	ReportPointer(ptrloading, "loading");
+	ReportPointer(ptrmapTime, "mapTime");
+	ReportPointer(ptrmapName, "mapName");
+	ReportPointer(ptrnoVr, "noVr");
+	ReportPointer(ptrSignOnState, "signOnState base");
 	
 	profiler.Stop();
-	print("[SIGSCANNING] Signature scanning done in " + profiler.ElapsedMilliseconds * 0.001f + " seconds");
-	
-	int buildnum = memory.ReadValue<int>(ptrbuildNum);
-	print("[GAME INFO] Game is build number " + buildnum);	
+	vars.print("[SIGSCANNING] Signature scanning done in " + profiler.ElapsedMilliseconds * 0.001f + " seconds");
 
-	if (isnoVr)
-	{
-		print("[GAME INFO] Game is running in No VR mode");
-	}
+#endregion
+
+	int buildnum = memory.ReadValue<int>(ptrbuildNum);
+	vars.print("[GAME INFO] Game is build number " + buildnum);	
+	vars.print("[GAME INFO] Game is running in " + ((isnoVr) ? "No VR" : "VR") + " mode");
 	
-	// SETTING UP WATCHLIST
+#region SETTING UP WATCHLIST
+	// 2838: some of these offsets should be sigscanned...
 	vars.loading 		= new MemoryWatcher<int>(ptrloading);
 	vars.mapTime 		= (isnoVr) ? new MemoryWatcher<float>(new DeepPointer(ptrmapTime, 0x0)) : new MemoryWatcher<float>(ptrmapTime);
 	vars.inLvlTrans 	= new MemoryWatcher<byte>(ptrinLvlTrans);
 	vars.entList		= new MemoryWatcher<IntPtr>(new DeepPointer(ptrentList));
 	vars.moveFlag 		= new MemoryWatcher<byte>(new DeepPointer(ptrentList, 0x18, 0x78, 0x2e9c));
 	vars.map			= new StringWatcher(ptrmapName, 120);
+	vars.signOnState	= new MemoryWatcher<byte>(new DeepPointer(ptrSignOnState, 0x1e0, 0x0, 0x50));
+	vars.accumTime		= new MemoryWatcher<int>(new DeepPointer(ptrentList, 0x20b8, 0x68));
 	
 	vars.watchIt = new MemoryWatcherList() {
 		vars.loading,
@@ -107,10 +120,13 @@ init
 		vars.inLvlTrans,
 		vars.entList,
 		vars.moveFlag,
-		vars.map
+		vars.map,
+		vars.signOnState,
+		vars.accumTime
 	};
+#endregion
 	
-	// ENTITY LIST FUNCTIONS
+#region ENTITY LIST FUNCTIONS
 	
 	int entInfoSize = 120;
 	
@@ -151,7 +167,7 @@ init
 				if (GetNameFromPtr(entPtr, isTargetName) == name)
 				{
 					prof.Stop();
-					print("[ENTFINDING] Successfully found " + name + "'s pointer after " + prof.ElapsedMilliseconds * 0.001f + " seconds, index #" + i);
+					vars.print("[ENTFINDING] Successfully found " + name + "'s pointer after " + prof.ElapsedMilliseconds * 0.001f + " seconds, index #" + i);
 					return entPtr;
 				}
 				else
@@ -160,14 +176,14 @@ init
 				}
 			}
 			prof.Stop();
-			print("ENTFINDING] Can't find " + name + "'s pointer! Time spent: " + prof.ElapsedMilliseconds * 0.001f + " seconds");
+			vars.print("ENTFINDING] Can't find " + name + "'s pointer! Time spent: " + prof.ElapsedMilliseconds * 0.001f + " seconds");
 		}
 		
 		return IntPtr.Zero;
 	};
 	
 	// 2838: not a necessary function but imma just put this here in case someone finds a use for it
-	Func<IntPtr, string> PrintPosFromPtr = (entPtr) =>
+	Func<IntPtr, string> printPosFromPtr = (entPtr) =>
 	{
 		DeepPointer posDP = new DeepPointer(entPtr, 0x1a0, 0x108);
 		IntPtr posPtr;
@@ -184,7 +200,10 @@ init
 	vars.GetEntFromName = GetEntFromName;
 	vars.GetEntPtrFromIndex = GetEntPtrFromIndex;
 	vars.GetNameFromPtr = GetNameFromPtr;
-	vars.PrintPosFromPtr = PrintPosFromPtr;	
+	vars.printPosFromPtr = printPosFromPtr;	
+#endregion
+
+	vars.OnSessionStart();
 }
 
 startup
@@ -194,10 +213,13 @@ startup
 	settings.SetToolTip("chapters", "Split on Chapter Transitions Instead of Per-Map");
     
     settings.Add("il", false, "IL Mode");
-	settings.SetToolTip("il", "Only use when running ILs. Starts automatically on any map selected");
-    
+	settings.SetToolTip("il", "Only used when running ILs. Starts automatically on any map selected");
+
+	settings.Add("changelevelsplit", true, "Use new method of splitting");
+	settings.SetToolTip("changelevelsplit", " Splits on detected game changelevel, works with campaign mods that change maps through changelevel triggers");
+
     //MAP DATA
-    vars.latestMap = "a1_intro_world";
+	vars.visitedMaps = new List<string>();
     
     vars.maps = new Dictionary<string, Tuple<int, int>>() { 
     //   MAP NAME                                             ID          CHAPTER
@@ -235,41 +257,98 @@ startup
         
         {"startup"                      , new Tuple<int, int>(-10       , -10       )}
     };
+	
+	vars.signOnStates = new Dictionary<int, string>() {
+	//	SIGN ON STATE		NAME
+		{0,					"None"},
+		{1,					"Challenge"},
+		{2,					"Connected"},
+		{3,					"New"},
+		{4,					"Prespawn"},
+		{5,					"Spawn"},
+		{6,					"Full"},
+		{7,					"ChangeLevel"},
+	};
     
     vars.waitForLoading = false;
     
     //TIMER
     vars.currentTime = 0.0f;
+	vars.mapStart = false;
 	
 	//END STUFF 
 	vars.autoGripDP1 = new MemoryWatcher<byte>(IntPtr.Zero);
 	vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
-	vars.endCheck = true;
+
+	Action OnSessionStart = () => {
+		vars.print("[GAMESTATE] Session began at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+
+		if (vars.map.Current == "a5_ending")
+		{
+			// do both hands to really make sure we don't miss
+			vars.autoGripDP1 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand1", true), 0x878, 0xb4));
+			vars.autoGripDP2 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand2", true), 0x878, 0xb4));
+		}
+	};
+
+	Action OnSessionEnd = () => {
+		vars.print("[GAMESTATE] Session ended at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+		
+		if (vars.map.Current == "a5_ending")
+		{
+			vars.autoGripDP1 = new MemoryWatcher<byte>(IntPtr.Zero);
+			vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
+		}
+		vars.mapStart = false;
+	};
+
+	Action<string> prints = (msg) =>
+	{
+		print("[ALYX ASL] " + msg);
+	};
+
+	vars.print = prints;
+
+	vars.OnSessionStart = OnSessionStart;
+	vars.OnSessionEnd = OnSessionEnd;
+
+	vars.TimerStartHandler = (EventHandler)((s, e) => {
+    	vars.print("[TIMER] Timer began at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+
+		if (vars.map.Current == "a5_ending")
+		{
+			// do both hands to really make sure we don't miss
+			vars.autoGripDP1 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand1", true), 0x878, 0xb4));
+			vars.autoGripDP2 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand2", true), 0x878, 0xb4));
+		}
+    });
+
+	timer.OnStart += vars.TimerStartHandler;
 }
 
 update
 {
 	vars.watchIt.UpdateAll(game);
-	
-	// 2838: Code for ending the run, messy but it works well enough
-	if (vars.map.Current == "a5_ending")
-	{
-		// first check: if the player started livesplit and is in the final map already
-		// second check: only search for the entity when game has just finished loading
 
-		if (vars.endCheck || (vars.loading.Current != 1 && vars.loading.Old == 1))
-		{
-			vars.endCheck = false;
-			// do both hands to really make sure we don't miss
-			vars.autoGripDP1 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand1", true), 0x878, 0xb4));
-			vars.autoGripDP2 = new MemoryWatcher<byte>(new DeepPointer(vars.GetEntFromName("g_release_hand2", true), 0x878, 0xb4));
-		}
+	if (vars.signOnState.Changed)
+	{
+		vars.print("[GAMESTATE] Game state changed from " + vars.signOnStates[vars.signOnState.Old] + " to " + vars.signOnStates[vars.signOnState.Current]);
+		if (vars.signOnState.Current == 6)
+			vars.OnSessionStart();
+		else if (vars.signOnState.Old == 6)
+			vars.OnSessionEnd();
+	}
+
+	if (vars.map.Changed)
+	{
+		vars.print("[GAMESTATE] Map changed from " + vars.map.Old + " to " + vars.map.Current);
 	}
 	
-	vars.autoGripDP1.Update(game);
-	vars.autoGripDP2.Update(game);
-	
-    //Set Current Time
+	if (vars.map.Current == "a5_ending")
+	{
+		vars.autoGripDP1.Update(game);
+		vars.autoGripDP2.Update(game);
+	}
 	
 	// 2838: 
 	// the game has 2 states of loading: waiting for map load (state 1) and waiting for the player to press the trigger (state 2)
@@ -287,68 +366,95 @@ update
 start
 {   
 	vars.currentTime = 0.0f;
-	vars.autoGripDP1 = new MemoryWatcher<byte>(IntPtr.Zero);
-	vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
-	
+	vars.visitedMaps.Clear();
+
     //Normal Start Condition
 
-    if(vars.map.Current == "a1_intro_world") {
-        if (vars.moveFlag.Current == 0 && vars.moveFlag.Old == 1) 
+    if (vars.map.Current == "a1_intro_world") {
+        return (vars.moveFlag.Current == 0 && vars.moveFlag.Old == 1);
+    }
+    else if ((vars.map.Current != "startup") && settings["il"])
+	{
+		if (vars.mapStart)
 		{
-            vars.latestMap = "a1_intro_world";
-            return true;
-        }
-        return false;
-    }
-    else if(settings["il"])
-    {
-        //IL Starts on any level
-        bool ilstart = (vars.loading.Old == 1 && vars.loading.Current == 0);
-        if (ilstart) { //latestmap has to be set or end split won't work
-            vars.latestMap = vars.map.Current;
-        }
-        return ilstart;
-    }
+			if (vars.loading.Changed && vars.loading.Old == 2 && vars.loading.Current != 1)
+			{
+				vars.mapStart = false;
+				vars.print("[TIMER] IL splitting enabled, starting from unpause");
+				return true;
+			}
+			return false;
+		}
+		vars.mapStart = (vars.signOnState.Changed && vars.signOnState.Current == 4 && vars.accumTime.Current == 0);
+
+		return false;
+	}
 }
 
 reset
 {
-    if(!settings["il"])
+	vars.visitedMaps.Clear();
+
+	if ((vars.map.Current != "startup" && vars.map.Current != "a1_intro_world") && settings["il"] )
+	{
+		vars.mapStart = (vars.signOnState.Changed && vars.signOnState.Current == 4 && vars.accumTime.Current == 0);
+		return vars.mapStart;
+	}
+	else if (vars.map.Current == "a1_intro_world")
     {
-        if(vars.map.Current == "a1_intro_world") {
-            if (vars.moveFlag.Old == 0 && vars.moveFlag.Current == 1) {
-                vars.latestMap = "a1_intro_world";
-                vars.currentTime = 0.0f;
-                return true;
-            }
-            return false;
+		if (vars.moveFlag.Old == 0 && vars.moveFlag.Current == 1) 
+		{
+			vars.currentTime = 0.0f;
+			return true;
         } 
+		return false;
     }
 }
 
 split
 {
-    //Only split if map is increasing
-    if(vars.maps[vars.map.Current].Item1 == vars.maps[vars.map.Old].Item1 + 1)
-    {
-        if(settings["chapters"])
-		{
-			vars.latestMap = vars.map.Current;			
-			return (vars.maps[vars.map.Current].Item2 == vars.maps[vars.map.Old].Item2 + 1);
-		}
-		
-        return true;
-    }
-	
     //Ending Conditional
-	if (vars.map.Current == "a5_ending")
+	if (vars.map.Current == "a5_ending" && vars.loading.Current == 0)
 	{
-        bool check = ( (vars.autoGripDP1.Current == 0 && vars.autoGripDP1.Old == 1) || 
-		(vars.autoGripDP2.Current == 0 && vars.autoGripDP2.Old == 1));
-        return check;
+        return (vars.autoGripDP1.Current == 0 && vars.autoGripDP1.Old == 1) 
+		|| (vars.autoGripDP2.Current == 0 && vars.autoGripDP2.Old == 1);
 	}
+
+	if (settings["changelevelsplit"])
+	{
+		if (vars.signOnState.Current == 7)
+		{
+			if (vars.map.Changed && vars.map.Current != "startup" 
+			&& !vars.visitedMaps.Contains(vars.map.Current))
+			{
+				vars.visitedMaps.Add(vars.map.Current);
+
+				vars.print("[GAMESTATE] Map changelevel event from " + vars.map.Old + " to " + vars.map.Current);
+
+				if (settings["chapters"] && vars.maps[vars.map.Current.ToLower()].Item2 == vars.maps[vars.map.Old.ToLower()].Item2 + 1)
+				{
+					vars.print("[GAMESTATE] Chapter change!");
+					return true;
+				}
+				else return (!settings["chapters"]);
+			}
+		}
+	}
+	//Only split if map is increasing
+    else 
+	{
+		if (!settings["chapters"]) 
+			return (vars.maps[vars.map.Current.ToLower()].Item1 == vars.maps[vars.map.Old.ToLower()].Item1 + 1);
+		else return vars.maps[vars.map.Current.ToLower()].Item2 == vars.maps[vars.map.Old.ToLower()].Item2 + 1;
+	} 
 }
 
 isLoading { return true; }
+
+shutdown {
+    timer.OnStart -= vars.TimerStartHandler;
+
+	vars.print("Exiting");
+}
 
 gameTime { return TimeSpan.FromSeconds(vars.currentTime); }
