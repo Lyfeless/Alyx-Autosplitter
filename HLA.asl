@@ -1,5 +1,5 @@
 // HLVR AUTO SPLITTER 
-// VERSION 2.3 -- MAR 20 2021
+// VERSION 2.4 -- MAY 28 2021
 // CREDITS: 
 	// Lyfeless and DerkO for starting the project, initial load removal and splitting code
 	// 2838 for Auto-Start, Auto-End, entity list and sigscanning shenanigans
@@ -13,13 +13,9 @@ init
 	// so we'll have to specify the size of the instruction
     Func<IntPtr, int, int, IntPtr> GetPointerFromOpcode = (ptr, trgOperandOffset, totalSize) =>
 	{
-		byte[] bytes = memory.ReadBytes(ptr + trgOperandOffset, 4);
-		if (bytes == null)
-		{
+		int offset = memory.ReadValue<int>(ptr + trgOperandOffset, 4);
+		if (offset == 0)
 			return IntPtr.Zero; 
-		}
-		Array.Reverse(bytes);
-		int offset = Convert.ToInt32(BitConverter.ToString(bytes).Replace("-",""),16);
 		IntPtr actualPtr = IntPtr.Add((ptr + totalSize), offset);
 		return actualPtr;
 	};
@@ -128,7 +124,7 @@ init
 	
 #region ENTITY LIST FUNCTIONS
 	
-	int entInfoSize = 120;
+	const int entInfoSize = 120;
 	
 	Func<int, IntPtr> GetEntPtrFromIndex = (index) =>
 	{
@@ -281,7 +277,7 @@ startup
 	vars.autoGripDP2 = new MemoryWatcher<byte>(IntPtr.Zero);
 
 	Action OnSessionStart = () => {
-		vars.print("[GAMESTATE] Session began at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+		vars.print("[GAMESTATE] Session began at " + vars.PrintTimeInfo());
 
 		if (vars.map.Current == "a5_ending")
 		{
@@ -292,7 +288,7 @@ startup
 	};
 
 	Action OnSessionEnd = () => {
-		vars.print("[GAMESTATE] Session ended at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+		vars.print("[GAMESTATE] Session ended at " + vars.PrintTimeInfo());
 		
 		if (vars.map.Current == "a5_ending")
 		{
@@ -307,13 +303,19 @@ startup
 		print("[ALYX ASL] " + msg);
 	};
 
+	Func<string> PrintTimeInfo = () => 
+	{
+		return vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time";
+	};
+
 	vars.print = prints;
+	vars.PrintTimeInfo = PrintTimeInfo;
 
 	vars.OnSessionStart = OnSessionStart;
 	vars.OnSessionEnd = OnSessionEnd;
 
 	vars.TimerStartHandler = (EventHandler)((s, e) => {
-    	vars.print("[TIMER] Timer began at " + vars.currentTime + " timer time, " + vars.mapTime.Current + " internal time & " + vars.accumTime.Current + " save file time");
+    	vars.print("[TIMER] Timer began at " + vars.PrintTimeInfo());
 
 		if (vars.map.Current == "a5_ending")
 		{
@@ -323,7 +325,12 @@ startup
 		}
     });
 
+	vars.TimerSplitHandler = (EventHandler)((s, e) => {
+		vars.print("[TIMER] Timer split at " + vars.PrintTimeInfo());
+	});
+
 	timer.OnStart += vars.TimerStartHandler;
+	timer.OnSplit += vars.TimerSplitHandler;
 }
 
 update
@@ -340,9 +347,7 @@ update
 	}
 
 	if (vars.map.Changed)
-	{
 		vars.print("[GAMESTATE] Map changed from " + vars.map.Old + " to " + vars.map.Current);
-	}
 	
 	if (vars.map.Current == "a5_ending")
 	{
@@ -357,10 +362,7 @@ update
 	float delta = vars.mapTime.Current - vars.mapTime.Old;
 	
 	if (delta > 0.0f && vars.loading.Current != 1 && vars.inLvlTrans.Current == 0)
-	{
 		vars.currentTime += delta;
-	}
-	
 }
 
 start
@@ -439,6 +441,13 @@ split
 				else return (!settings["chapters"]);
 			}
 		}
+
+		// HACKHACK: intro_world_2 is transitioned from a generic map command, so just add an edge case here
+		if (vars.map.Old == "a1_intro_world" && vars.map.Current == "a1_intro_world_2")
+		{
+			vars.visitedMaps.Add(vars.map.Current);
+			return true;
+		}
 	}
 	//Only split if map is increasing
     else 
@@ -453,6 +462,7 @@ isLoading { return true; }
 
 shutdown {
     timer.OnStart -= vars.TimerStartHandler;
+    timer.OnSplit -= vars.TimerSplitHandler;
 
 	vars.print("Exiting");
 }
