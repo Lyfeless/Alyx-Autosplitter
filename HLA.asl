@@ -15,14 +15,14 @@ startup
     // DEBUG SPEW
     var dictDebugSwitches = new Dictionary<string, bool>()
     {
-        {"DISABLE",				false},
-        {"ALL",					true},
-        {"[ACHIEVEMENTS]",		true},
-        {"[GAMESTATE]",			false},
-        {"[TIMER]",				false},
-        {"[SIGSCANNING]",		true},
-        {"[GAME INFO]",			false},
-        {"[ENTFINDING]",		true},
+        {"DISABLE",             true},
+        {"ALL",                 true},
+        {"[ACHIEVEMENTS]",      true},
+        {"[GAMESTATE]",         false},
+        {"[TIMER]",             false},
+        {"[SIGSCANNING]",       true},
+        {"[GAME INFO]",         false},
+        {"[ENTFINDING]",        true},
     };
 
     Action<string> prints = (msg) =>
@@ -91,7 +91,7 @@ startup
 #region DICTIONARIES
     vars.dictMaps = new Dictionary<string, Tuple<int, int, int>>() 
     { 
-    //   MAP NAME                                             		ID          CHAPTER		MINIMUM RESIN
+    //   MAP NAME                                                  ID          CHAPTER     MINIMUM RESIN
         {"a1_intro_world"               , new Tuple<int, int, int>(0         , 0         , 0         )},
         {"a1_intro_world_2"             , new Tuple<int, int, int>(1         , 0         , 0         )},
         
@@ -129,58 +129,58 @@ startup
 
     vars.dictAchNames = new Dictionary<string, string>()
     {
-        // ACHIEVEMENT API NAME						ACTUAL NAME
-        {"TRACK_A1_INTRO_WORLD_2",					"Hit and Run"},
-        {"TRACK_A2_QUARANTINE_ENTRANCE",			"Quaranta Giorni"},
-        {"SIDE_GLOBAL_BREAK_BOTTLES",				"Mazel Tov"},
-        {"SIDE_FEED_SNARK",							"Good Grub"},
-        {"SIDE_HL2_PLAYGROUND",						"On a Roll"},
-        {"SIDE_RUSSELL_SCENE",						"Little Slugger"},
-        {"SIDE_CATCH_AMMO_CLIP",					"Mag-Snagger"},
-        {"TRACK_A2_HIDEOUT",						"Sustenance"},
-        {"SIDE_SQUEEZE_HC_HEART",					"Freshly Squeezed"},
-        {"TRACK_A2_HEADCRABS_TUNNEL",				"Zombie with a Shotgun"},
-        {"TRACK_A2_DRAINAGE",						"Xen Garden"},
-        {"TRACK_A2_TRAIN_YARD",						"Off the Rails"},
-        {"TRACK_A3_STATION_STREET",					"Checking In"},
-        {"TRACK_A3_HOTEL_LOBBY_BASEMENT",			"Heart-Breaker Hotel"},
-        {"TRACK_A3_HOTEL_UNDERGROUND_PIT",			"Surface Tension"},
-        {"TRACK_A3_HOTEL_INTERIOR_ROOFTOP",			"Unbonded"},
-        {"TRACK_A3_HOTEL_STREET",					"Cord-Cutter"},
-        {"TRACK_A3_C17_PROCESSING_PLANT",			"Blast From the Past"},
-        {"TRACK_A3_DISTILLERY_NOKILLBZ",			"Sound Strategy"},
-        {"TRACK_A3_DISTILLERY_KILLBZ",				"Flat Note"},
-        {"SIDE_CATCH_FALLING_BOTTLE",				"Hold Your Liquor"},
-        {"TRACK_A4_C17_ZOO",						"Sea Level"},
-        {"TRACK_A4_C17_TANKER_YARD",				"Triple Bypass"},
-        {"TRACK_A4_C17_WATER_TOWER",				"High Water March"},
-        {"TRACK_A4_C17_PARKING_GARAGE",				"Textbook Jinxing"},
-        {"TRACK_A5_VAULT",							"Point Extraction"},
-        {"TRACK_A5_ENDING",							"Consequences"},
-        {"TRAINING_LOOT_ZOMBIE",					"Dead Giveaway"},
-        {"TRAINING_BREAK_ITEM_CRATE",				"Smash and Grab"},
-        {"TRAINING_KILL_SOLDIER_WITH_GASTANK",		"Pro-Pain"},
-        {"SKILL_KILL_CHARGER_WHILE_SHIELD_UP",		"Indirect Approach"},
-        {"TRAINING_LOOT_LIVING_SOLDIER",			"Combine Harvester"},
-        {"TRAINING_STEAL_XEN_GRENADE",				"Xen Lootism"},
-        {"SIDE_HACK_TRIPMINE",						"Safe Trip"},
-        {"SKILL_GGENEMY_GRENADE_MID_FLIGHT",		"Deadliest Catch"},
-        {"SIDE_CLOSE_TO_BLIND_ZOMBIE",				"Near-Jeff Experience"},
-        {"SIDE_BRING_RUSSELL_VODKA",				"Team Spirit"},
-        {"HIDDEN_CARRY_GNOME",						"Gnome Vault of My Own"}
+        // ACHIEVEMENT API NAME                     ACTUAL NAME
+        {"TRACK_A1_INTRO_WORLD_2",                  "Hit and Run"},
+        {"TRACK_A2_QUARANTINE_ENTRANCE",            "Quaranta Giorni"},
+        {"SIDE_GLOBAL_BREAK_BOTTLES",               "Mazel Tov"},
+        {"SIDE_FEED_SNARK",                         "Good Grub"},
+        {"SIDE_HL2_PLAYGROUND",                     "On a Roll"},
+        {"SIDE_RUSSELL_SCENE",                      "Little Slugger"},
+        {"SIDE_CATCH_AMMO_CLIP",                    "Mag-Snagger"},
+        {"TRACK_A2_HIDEOUT",                        "Sustenance"},
+        {"SIDE_SQUEEZE_HC_HEART",                   "Freshly Squeezed"},
+        {"TRACK_A2_HEADCRABS_TUNNEL",               "Zombie with a Shotgun"},
+        {"TRACK_A2_DRAINAGE",                       "Xen Garden"},
+        {"TRACK_A2_TRAIN_YARD",                     "Off the Rails"},
+        {"TRACK_A3_STATION_STREET",                 "Checking In"},
+        {"TRACK_A3_HOTEL_LOBBY_BASEMENT",           "Heart-Breaker Hotel"},
+        {"TRACK_A3_HOTEL_UNDERGROUND_PIT",          "Surface Tension"},
+        {"TRACK_A3_HOTEL_INTERIOR_ROOFTOP",         "Unbonded"},
+        {"TRACK_A3_HOTEL_STREET",                   "Cord-Cutter"},
+        {"TRACK_A3_C17_PROCESSING_PLANT",           "Blast From the Past"},
+        {"TRACK_A3_DISTILLERY_NOKILLBZ",            "Sound Strategy"},
+        {"TRACK_A3_DISTILLERY_KILLBZ",              "Flat Note"},
+        {"SIDE_CATCH_FALLING_BOTTLE",               "Hold Your Liquor"},
+        {"TRACK_A4_C17_ZOO",                        "Sea Level"},
+        {"TRACK_A4_C17_TANKER_YARD",                "Triple Bypass"},
+        {"TRACK_A4_C17_WATER_TOWER",                "High Water March"},
+        {"TRACK_A4_C17_PARKING_GARAGE",             "Textbook Jinxing"},
+        {"TRACK_A5_VAULT",                          "Point Extraction"},
+        {"TRACK_A5_ENDING",                         "Consequences"},
+        {"TRAINING_LOOT_ZOMBIE",                    "Dead Giveaway"},
+        {"TRAINING_BREAK_ITEM_CRATE",               "Smash and Grab"},
+        {"TRAINING_KILL_SOLDIER_WITH_GASTANK",      "Pro-Pain"},
+        {"SKILL_KILL_CHARGER_WHILE_SHIELD_UP",      "Indirect Approach"},
+        {"TRAINING_LOOT_LIVING_SOLDIER",            "Combine Harvester"},
+        {"TRAINING_STEAL_XEN_GRENADE",              "Xen Lootism"},
+        {"SIDE_HACK_TRIPMINE",                      "Safe Trip"},
+        {"SKILL_GGENEMY_GRENADE_MID_FLIGHT",        "Deadliest Catch"},
+        {"SIDE_CLOSE_TO_BLIND_ZOMBIE",              "Near-Jeff Experience"},
+        {"SIDE_BRING_RUSSELL_VODKA",                "Team Spirit"},
+        {"HIDDEN_CARRY_GNOME",                      "Gnome Vault of My Own"}
     };
     
     vars.signOnStates = new Dictionary<int, string>() 
     {
-    //	SIGN ON STATE		NAME
-        {0,					"None"},
-        {1,					"Challenge"},
-        {2,					"Connected"},
-        {3,					"New"},
-        {4,					"Prespawn"},
-        {5,					"Spawn"},
-        {6,					"Full"},
-        {7,					"ChangeLevel"},
+    //   SIGN ON STATE          NAME
+        {0,                    "None"},
+        {1,                    "Challenge"},
+        {2,                    "Connected"},
+        {3,                    "New"},
+        {4,                    "Prespawn"},
+        {5,                    "Spawn"},
+        {6,                    "Full"},
+        {7,                    "ChangeLevel"},
     };
 
 #endregion
@@ -321,29 +321,29 @@ init
 #endregion
 
 #region SIGSCANNING
-    var sigEntList 		=	new SigScanTarget(6, 	"40 ?? 48 ?? ?? ??", 
-                                                    "48 ?? ?? ?? ?? ?? ??", // MOV RAX,qword ptr [DAT_1814e3bc0]
-                                                    "8b ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ff ?? ?? ?? ?? ?? 4c ?? ??");
-    var sigLoading 		=	new SigScanTarget(18, 	"B2 01 C6 05 ?? ?? ?? ?? 01 48 8B 01 FF 90 ?? ?? ?? ??", 
-                                                    "C7 05 ?? ?? ?? ?? 01 00 00 00", // MOV dword ptr [DAT_180f67f7c],0x1 
-                                                    "0F 28 74 24 40 48 83 C4 50 5B");
-    var sigInLvlTrans 	=	new SigScanTarget(30, 	"F3 0F 11 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 86 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 85 C0",
-                                                    "C6 05 ?? ?? ?? ?? 01"); // MOV byte ptr [DAT_180e8916c],0x1)
-    var sigBuildNum		=	new SigScanTarget(4,	"48 83 ec ??",
-                                                    "8b 05 ?? ?? ?? ??", // MOV EAX,dword ptr [0x18053ef54]
-                                                    "33 ff 85 c0 0f ?? ?? ?? ?? 00 48 89 5c 24 30 8b df 48 89 74 24 38");
-    var sigMapTime		=	new SigScanTarget(11,	"F3 0F 58 ?? 48 8B 05 ?? ?? ?? ??",
-                                                    "F3 0F 11 ?? ?? ?? ?? ??", // this
-                                                    "48 85 C0 74 ?? 80 38 00 74 ??");
-    var sigMapTimeNoVr	=	new SigScanTarget(0,	"4C 8B 05 ?? ?? ?? ??", // MOV R8,qword ptr [0x18125f8e0]
-                                                    "48 8D 0D ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 41 B1 01");
-    var sigMapName		=	new SigScanTarget(7,	"48 8B 97 ?? ?? ?? ??", 
-                                                    "48 8D 0D ?? ?? ?? ??", // LEA RCX,[0x180544a00]
-                                                    "48 8B 5C 24 ??");
-    var sigNoVr			=	new SigScanTarget(0,	"48 8B 0D ?? ?? ?? ??", // MOV RCX,qword ptr [0x180e5e928]
-                                                    "48 8B DA 48 85 C9 0F 84 ?? ?? ?? ?? 48 8B 01");
-    var sigSignOnState	=	new SigScanTarget(0,	"48 8B 05 ?? ?? ?? ??", // MOV RAX,qword ptr [signOnState base]
-                                                    "48 8B D9 48 8D 0D ?? ?? ?? ?? FF 90 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00");
+    var sigEntList          =   new SigScanTarget(6,    "40 ?? 48 ?? ?? ??", 
+                                                        "48 ?? ?? ?? ?? ?? ??", // MOV RAX,qword ptr [DAT_1814e3bc0]
+                                                        "8b ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ff ?? ?? ?? ?? ?? 4c ?? ??");
+    var sigLoading          =   new SigScanTarget(18,   "B2 01 C6 05 ?? ?? ?? ?? 01 48 8B 01 FF 90 ?? ?? ?? ??", 
+                                                        "C7 05 ?? ?? ?? ?? 01 00 00 00", // MOV dword ptr [DAT_180f67f7c],0x1 
+                                                        "0F 28 74 24 40 48 83 C4 50 5B");
+    var sigInLvlTrans       =   new SigScanTarget(30,   "F3 0F 11 05 ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8B 86 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 85 C0",
+                                                        "C6 05 ?? ?? ?? ?? 01"); // MOV byte ptr [DAT_180e8916c],0x1)
+    var sigBuildNum         =   new SigScanTarget(4,    "48 83 ec ??",
+                                                        "8b 05 ?? ?? ?? ??", // MOV EAX,dword ptr [0x18053ef54]
+                                                        "33 ff 85 c0 0f ?? ?? ?? ?? 00 48 89 5c 24 30 8b df 48 89 74 24 38");
+    var sigMapTime          =   new SigScanTarget(11,   "F3 0F 58 ?? 48 8B 05 ?? ?? ?? ??",
+                                                        "F3 0F 11 ?? ?? ?? ?? ??", // this
+                                                        "48 85 C0 74 ?? 80 38 00 74 ??");
+    var sigMapTimeNoVr      =   new SigScanTarget(0,    "4C 8B 05 ?? ?? ?? ??", // MOV R8,qword ptr [0x18125f8e0]
+                                                        "48 8D 0D ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 41 B1 01");
+    var sigMapName          =   new SigScanTarget(7,    "48 8B 97 ?? ?? ?? ??", 
+                                                        "48 8D 0D ?? ?? ?? ??", // LEA RCX,[0x180544a00]
+                                                        "48 8B 5C 24 ??");
+    var sigNoVr             =   new SigScanTarget(0,    "48 8B 0D ?? ?? ?? ??", // MOV RCX,qword ptr [0x180e5e928]
+                                                        "48 8B DA 48 85 C9 0F 84 ?? ?? ?? ?? 48 8B 01");
+    var sigSignOnState      =   new SigScanTarget(0,    "48 8B 05 ?? ?? ?? ??", // MOV RAX,qword ptr [signOnState base]
+                                                        "48 8B D9 48 8D 0D ?? ?? ?? ?? FF 90 ?? ?? ?? ?? 48 85 C0 74 ?? 4C 8B 00");
 
     var swProfiler = Stopwatch.StartNew();
     
@@ -352,17 +352,17 @@ init
     var scannerServer = GetSignatureScanner("server.dll");
     var scannerEngine = GetSignatureScanner("engine2.dll");
 
-    IntPtr ptrNoVr			= GetPointerFromOpcode(scannerClient.Scan(sigNoVr), 3, 7);
+    IntPtr ptrNoVr              = GetPointerFromOpcode(scannerClient.Scan(sigNoVr), 3, 7);
     // this pointer doesn't seem to be initialized whenever the game is in novr
     bool bIsNoVr = new DeepPointer(ptrNoVr).Deref<IntPtr>(game) == IntPtr.Zero;
     
-    IntPtr ptrEntList 		= GetPointerFromOpcode(scannerServer.Scan(sigEntList), 3, 7);
-    IntPtr ptrLoading		= GetPointerFromOpcode(scannerClient.Scan(sigLoading), 2, 10); 
-    IntPtr ptrInLvlTrans	= GetPointerFromOpcode(scannerClient.Scan(sigInLvlTrans), 2, 7);
-    IntPtr ptrBuildNum		= GetPointerFromOpcode(scannerEngine.Scan(sigBuildNum), 2, 6);
-    IntPtr ptrMapTime 		= (bIsNoVr) ? GetPointerFromOpcode(scannerServer.Scan(sigMapTimeNoVr), 3, 7) : GetPointerFromOpcode(scannerClient.Scan(sigMapTime), 4, 8);
-    IntPtr ptrMapName 		= GetPointerFromOpcode(scannerEngine.Scan(sigMapName), 3, 7) + 0x100;
-    IntPtr ptrSignOnState	= GetPointerFromOpcode(scannerEngine.Scan(sigSignOnState), 3, 7) + 0x218;
+    IntPtr ptrEntList           = GetPointerFromOpcode(scannerServer.Scan(sigEntList), 3, 7);
+    IntPtr ptrLoading           = GetPointerFromOpcode(scannerClient.Scan(sigLoading), 2, 10); 
+    IntPtr ptrInLvlTrans        = GetPointerFromOpcode(scannerClient.Scan(sigInLvlTrans), 2, 7);
+    IntPtr ptrBuildNum          = GetPointerFromOpcode(scannerEngine.Scan(sigBuildNum), 2, 6);
+    IntPtr ptrMapTime           = (bIsNoVr) ? GetPointerFromOpcode(scannerServer.Scan(sigMapTimeNoVr), 3, 7) : GetPointerFromOpcode(scannerClient.Scan(sigMapTime), 4, 8);
+    IntPtr ptrMapName           = GetPointerFromOpcode(scannerEngine.Scan(sigMapName), 3, 7) + 0x100;
+    IntPtr ptrSignOnState       = GetPointerFromOpcode(scannerEngine.Scan(sigSignOnState), 3, 7) + 0x218;
     
     ReportPointer(ptrEntList, "entList");
     ReportPointer(ptrInLvlTrans, "inLvlTrans");
@@ -443,22 +443,29 @@ init
     // prepare byte arrays for writing 
 
     byte[] arrAIFunc1New = new byte[] 
-    { 	
-        0x48, 0x89, 0x0D, off1Bytes[0], off1Bytes[1], off1Bytes[2], off1Bytes[3],	// mov 		[ptrAIBegin],rcx
-         0xFF, 0x50, 0x28,															// call 	qword ptr [rax+28]
-        0x84, 0xc0,																	// test 	al, al
-        0xe9, off2Bytes[0], off2Bytes[1], off2Bytes[2], off2Bytes[3], 				// jump 	ptrAIFunc1 + 0x5
-    };				
+    {
+        // mov      [ptrAIBegin],rcx
+        0x48, 0x89, 0x0D, off1Bytes[0], off1Bytes[1], off1Bytes[2], off1Bytes[3],
+        // call     qword ptr [rax+28]
+        0xFF, 0x50, 0x28,
+        // test     al, al                                        
+        0x84, 0xc0,
+        // jump     ptrAIFunc1 + 0x5
+        0xe9, off2Bytes[0], off2Bytes[1], off2Bytes[2], off2Bytes[3],
+    };                
     
     byte[] jmpBytes = new byte[] 
-    { 	
-        0xe9, off3Bytes[0], off3Bytes[1], off3Bytes[2], off3Bytes[3] 				// jump 	ptrAIBegin
+    {
+        // jump     ptrAIBegin
+        0xe9, off3Bytes[0], off3Bytes[1], off3Bytes[2], off3Bytes[3]
     }; 
 
     byte[] arrAIFunc2New = new byte[] 
-    { 	
-        0xB0, 0x01,																	// mov		al, 01
-        0xC3																		// ret
+    {
+        // mov        al, 01
+        0xB0, 0x01,            
+        // ret                                                        
+        0xC3
     }; 
 
     // store to injection list
@@ -485,19 +492,19 @@ complete:
 #endregion
 
     int buildnum = memory.ReadValue<int>(ptrBuildNum);
-    vars.print("[GAME INFO] Game is build number " + buildnum);	
+    vars.print("[GAME INFO] Game is build number " + buildnum);    
     vars.print("[GAME INFO] Game is running in " + ((bIsNoVr) ? "No VR" : "VR") + " mode");
 
 #region SETTING UP WATCHLIST
-    vars.mwLoading 		= new MemoryWatcher<int>(ptrLoading);
-    vars.mwMapTime 		= (bIsNoVr) ? new MemoryWatcher<float>(new DeepPointer(ptrMapTime, 0x0)) : new MemoryWatcher<float>(ptrMapTime);
-    vars.mwInLvlTrans 	= new MemoryWatcher<byte>(ptrInLvlTrans);
-    vars.mwEntList		= new MemoryWatcher<IntPtr>(new DeepPointer(ptrEntList));
-    vars.mwMoveFlag 	= new MemoryWatcher<byte>(new DeepPointer(ptrEntList, 0x18, 0x78, 0x2e9c));
-    vars.mwMap			= new StringWatcher(ptrMapName, 120);
-    vars.mwSignOnState	= new MemoryWatcher<byte>(new DeepPointer(ptrSignOnState, 0x1e0, 0x0, 0x50));
-    vars.mwAccumTime	= new MemoryWatcher<int>(new DeepPointer(ptrEntList, 0x20b8, 0x68));
-    vars.mwResinCount	= new MemoryWatcher<int>(new DeepPointer(ptrEntList, 0x18, 0x78, 0x2cf0));
+    vars.mwLoading          = new MemoryWatcher<int>(ptrLoading);
+    vars.mwMapTime          = (bIsNoVr) ? new MemoryWatcher<float>(new DeepPointer(ptrMapTime, 0x0)) : new MemoryWatcher<float>(ptrMapTime);
+    vars.mwInLvlTrans       = new MemoryWatcher<byte>(ptrInLvlTrans);
+    vars.mwEntList          = new MemoryWatcher<IntPtr>(new DeepPointer(ptrEntList));
+    vars.mwMoveFlag         = new MemoryWatcher<byte>(new DeepPointer(ptrEntList, 0x18, 0x78, 0x2e9c));
+    vars.mwMap              = new StringWatcher(ptrMapName, 120);
+    vars.mwSignOnState      = new MemoryWatcher<byte>(new DeepPointer(ptrSignOnState, 0x1e0, 0x0, 0x50));
+    vars.mwAccumTime        = new MemoryWatcher<int>(new DeepPointer(ptrEntList, 0x20b8, 0x68));
+    vars.mwResinCount       = new MemoryWatcher<int>(new DeepPointer(ptrEntList, 0x18, 0x78, 0x2cf0));
     
     vars.mwlMaster = new MemoryWatcherList() 
     {
@@ -631,10 +638,10 @@ complete:
     };
 
     // split types:
-    // 1	map transition
-    // 2	chapter change
-    // 3	achievement
-    // 4	resin collection
+    // 1    map transition
+    // 2    chapter change
+    // 3    achievement
+    // 4    resin collection
     Func<int, int> Split = (type) =>
     {
         if (type == -1 || !settings["split"] || vars.TimerModel.CurrentState.CurrentPhase != TimerPhase.Running)
@@ -823,7 +830,7 @@ update
                     memory.WriteBytes((IntPtr)vars.ptrAchievement, BitConverter.GetBytes(0xFFFFFFFFFFFFFFFF));
                 }
             }
-        }	
+        }    
 
         //Ending Conditional
         if (vars.mwMap.Current == "a5_ending" && vars.mwLoading.Current == 0)
