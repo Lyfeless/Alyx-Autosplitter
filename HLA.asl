@@ -1,5 +1,5 @@
 // HLVR AUTO SPLITTER 
-// VERSION 2.7 - OCTOBER 15 2021
+// VERSION 2.8 - SEPTEMBER 30TH 2022
 // CREDITS: 
     // Lyfeless and DerkO for starting the project, initial load removal and splitting code
     // 2838 for Auto-Start, Auto-End, entity list, sigscanning and memory injection shenanigans
@@ -15,7 +15,7 @@ startup
     // DEBUG SPEW
     var dictDebugSwitches = new Dictionary<string, bool>()
     {
-        {"DISABLE",             true},
+        {"DISABLE",             false},
         {"ALL",                 true},
         {"[ACHIEVEMENTS]",      true},
         {"[GAMESTATE]",         false},
@@ -647,7 +647,7 @@ complete:
         if (type == -1 || !settings["split"] || vars.TimerModel.CurrentState.CurrentPhase != TimerPhase.Running)
             return 0;
 
-        if (settings["splitsrename-type" + type])
+        if (settings.ContainsKey("splitsrename-type" + type) && settings["splitsrename-type" + type])
             switch(type)
             {
                 case 1:
@@ -668,7 +668,7 @@ complete:
                 }
             }
 
-        if (settings["split-type" + type])
+        if (settings["split-type" + type] || (type == 2 && settings["split-type1"]))
             vars.TimerModel.Split();
 
         return 0;
@@ -765,23 +765,26 @@ update
                     vars.listVisitedMaps.Add(vars.mwMap.Current);
                     vars.print("[GAMESTATE] Map changelevel event from " + vars.mwMap.Old + " to " + vars.mwMap.Current);
 
-                    if (settings["split-type2"] && vars.dictMaps[vars.mwMap.Current.ToLower()].Item2 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item2 + 1)
+                    if (vars.dictMaps[vars.mwMap.Current.ToLower()].Item2 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item2 + 1)
                     {
                         vars.print("[GAMESTATE] Chapter change!");
-                        return 1;
+                        return 2;
                     }
-                    else return 2;
+                    return 1;
                 }
             }
         }
         else 
         {
             //Only split if map / chapter is increasing
-            if (!settings["split-type2"]) 
-                if (vars.dictMaps[vars.mwMap.Current.ToLower()].Item1 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item1 + 1)
-                    return 1;
-            else if (settings["split-type1"] && vars.dictMaps[vars.mwMap.Current.ToLower()].Item2 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item2 + 1)
+            if (vars.dictMaps[vars.mwMap.Current.ToLower()].Item2 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item2 + 1)
+            {
+                vars.print("Chapter change!");
+                return 2;
+            }
+            if (vars.dictMaps[vars.mwMap.Current.ToLower()].Item1 == vars.dictMaps[vars.mwMap.Old.ToLower()].Item1 + 1)
                 return 1;
+
         } 
 
         // check resin
